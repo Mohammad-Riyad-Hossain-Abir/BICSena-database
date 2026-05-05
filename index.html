@@ -752,8 +752,8 @@ input[type=file]{color:var(--muted);border:none;background:none;padding:3px 0;}
       <label class="lbl">আপনার ইউনিক আইডি নম্বর</label>
       <input id="check-uid" type="text" placeholder="যেমন: ICS-XXXXX-XXXX" style="margin-bottom:10px"/>
       <button class="subbtn" style="margin-top:0" onclick="checkStatus()">স্ট্যাটাস দেখুন</button>
-      <div id="check-result" style="margin-top:16px"></div>
-    </div>
+    div id="check-result" style="margin-top:16px"></div>
+    <iv>
   </div>
 </div>
 
@@ -773,13 +773,18 @@ input[type=file]{color:var(--muted);border:none;background:none;padding:3px 0;}
     <!-- NAV TABS -->
     <div class="tabbar" id="admin-nav">
       <button class="tbtn act" id="nav-members" onclick="showAdminTab('members')">📋 সদস্য তালিকা</button>
-      <button class="tbtn" id="nav-fulllist" onclick="showAdminTab('fulllist')">📄 সম্পূর্ণ তালিকা</button>
+<button class="tbtn" id="nav-fulllist" onclick="showAdminTab('fulllist')">📄 সম্পূর্ণ তালিকা</button
       <button class="tbtn" id="nav-levellist" onclick="showAdminTab('levellist')">🏅 স্তর অনুযায়ী তালিকা</button>
       <button class="tbtn" id="nav-branchstat" onclick="showAdminTab('branchstat')">🏛️ শাখা পরিসংখ্যান</button>
       <button class="tbtn" id="nav-predsearch" onclick="showAdminTab('predsearch')">🔍 সভাপতি সার্চ</button>
+      <button class="tbtn" id="nav-predsearch" onclick="showAdminTab('predsearch')">🔍 শিক্ষা প্রতিষ্ঠান সার্চ</button>
       <button class="tbtn" id="nav-settings" onclick="showAdminTab('settings')">⚙️ সেটিংস</button>
     </div>
-
+<div class="tabbar">
+  <button class="tbtn act" onclick="filterByDuty('all', this)">সবাই</button>
+  <button class="tbtn" onclick="filterByDuty('হ্যাঁ', this)">বর্তমান</button>
+  <button class="tbtn" onclick="filterByDuty('না', this)">সাবেক</button>
+</div>
     <!-- MEMBERS TAB -->
     <div id="tab-members">
       <div class="ahead">
@@ -804,7 +809,8 @@ input[type=file]{color:var(--muted);border:none;background:none;padding:3px 0;}
       <button class="hdr-btn" style="margin-bottom:12px;padding:8px 18px;font-size:13px" onclick="printFullList()">🖨️ প্রিন্ট করুন</button>
       <div id="fulllist-content"></div>
     </div>
-
+  
+    
     <!-- LEVEL LIST TAB -->
     <div id="tab-levellist" class="hidden">
       <div class="ahead">
@@ -837,7 +843,16 @@ input[type=file]{color:var(--muted);border:none;background:none;padding:3px 0;}
       <button class="hdr-btn" style="margin-bottom:12px;padding:8px 18px;font-size:13px" onclick="printPresidentSearch()">🖨️ সার্চ ফলাফল প্রিন্ট করুন</button>
       <div id="predsearch-content"></div>
     </div>
-
+<!-- INSTITUTION SEARCH TAB -->
+    <div id="tab-predsearch" class="hidden">
+      <div class="ahead">
+        <h2>শিক্ষা প্রতিষ্ঠানের নামে সার্চ </h2>
+      </div>
+      <input class="srch" id="predsrch" type="text" placeholder="শিক্ষা প্রতিষ্ঠানের নাম লিখুন..." oninput="renderPresidentSearch()"/>
+      <button class="hdr-btn" style="margin-bottom:12px;padding:8px 18px;font-size:13px" onclick="printPresidentSearch()">🖨️ সার্চ ফলাফল প্রিন্ট করুন</button>
+      <div id="predsearch-content"></div>
+    </div>
+  
     <!-- SETTINGS TAB -->
     <div id="tab-settings" class="hidden">
       <div class="setcard">
@@ -1878,7 +1893,18 @@ function printBranchStat() {
   <tbody>${rows}</tbody></table></body></html>`);
   w.document.close(); w.print();
 }
+let currentDutyFilter = 'all';
 
+function filterByDuty(duty, btn) {
+  currentDutyFilter = duty;
+  
+  // বাটনের একটিভ ক্লাস পরিবর্তন
+  document.querySelectorAll('.tabbar .tbtn').forEach(b => b.classList.remove('act'));
+  btn.classList.add('act');
+  
+  // মেম্বার লিস্ট পুনরায় রেন্ডার করা
+  renderAdminMembers();
+}
 // ===== PRESIDENT SEARCH =====
 function renderPresidentSearch() {
   const q=(document.getElementById('predsrch').value||'').trim().toLowerCase();
@@ -1933,6 +1959,89 @@ function printPresidentSearch() {
   <tbody>${rows}</tbody></table></body></html>`);
   w.document.close(); w.print();
 }
+
+function printInstitutionSearch() {
+  const q=(document.getElementById('predsrch').value||'').trim().toLowerCase();
+  if(!q){showToast('প্রথমে শিক্ষা প্রতিষ্ঠানের নাম লিখুন');return;}
+  const fl=members.filter(m=>(m.presidentName||'').toLowerCase().includes(q));
+  if(!fl.length){showToast('কোনো ফলাফল পাওয়া যায়নি');return;}
+  let rows=fl.map((m,i)=>`<tr><td>${i+1}</td><td>${m.uid||''}</td><td>${m.name||''}</td><td>${m.mobile||''}</td><td>${m.branch||''}</td><td>${m.designation||''}</td><td>${m.presidentName||''}</td><td>${m.presidentPhone||''}</td><td>${m.paymentConfirmed?'নিশ্চিত':'অপেক্ষমাণ'}</td></tr>`).join('');
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><meta charset="UTF-8"><title>সভাপতি সার্চ ফলাফল</title>
+  <style>body{font-family:sans-serif;padding:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:6px 8px;font-size:11px;text-align:left}th{background:#0f2340;color:#e2c97e}tr:nth-child(even){background:#f5f5f5}h2{text-align:center}</style></head>
+  <body><h2>বাংলাদেশ ইসলামী ছাত্রসেনা — সভাপতি সার্চ ফলাফল</h2>
+  <p>সার্চ: "${document.getElementById('predsrch').value}" | মোট ফলাফল: ${fl.length} জন</p>
+  <table><thead><tr><th>#</th><th>আইডি</th><th>নাম</th><th>মোবাইল</th><th>শাখা</th><th>পদবী</th><th>সভাপতির নাম</th><th>সভাপতির মোবাইল</th><th>স্ট্যাটাস</th></tr></thead>
+  <tbody>${rows}</tbody></table></body></html>`);
+  w.document.close(); w.print();
+}
+  function printInstitutionSearch() {
+  const q = (document.getElementById('instsrch').value || '').trim().toLowerCase();
+  if (!q) {
+    showToast('প্রথমে শিক্ষা প্রতিষ্ঠানের নাম লিখুন');
+    return;
+  }
+
+  // ফিল্টার করা হচ্ছে মেম্বারদের শিক্ষা প্রতিষ্ঠানের নামের ওপর ভিত্তি করে
+  const fl = members.filter(m => (m.institution || m.college || '').toLowerCase().includes(q));
+
+  if (!fl.length) {
+    showToast('কোনো ফলাফল পাওয়া যায়নি');
+    return;
+  }
+
+  // টেবিলের রো তৈরি
+  let rows = fl.map((m, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${m.uid || ''}</td>
+      <td>${m.name || ''}</td>
+      <td>${m.mobile || ''}</td>
+      <td>${m.institution || m.college || ''}</td>
+      <td>${m.branch || ''}</td>
+      <td>${m.designation || ''}</td>
+      <td>${m.paymentConfirmed ? 'নিশ্চিত' : 'অপেক্ষমাণ'}</td>
+    </tr>`).join('');
+
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>শিক্ষা প্রতিষ্ঠান ভিত্তিক সার্চ ফলাফল</title>
+      <style>
+        body{font-family:sans-serif;padding:20px}
+        table{border-collapse:collapse;width:100%}
+        th,td{border:1px solid #999;padding:6px 8px;font-size:11px;text-align:left}
+        th{background:#0f2340;color:#e2c97e}
+        tr:nth-child(even){background:#f5f5f5}
+        h2{text-align:center}
+      </style>
+    </head>
+    <body>
+      <h2>বাংলাদেশ ইসলামী ছাত্রসেনা — প্রতিষ্ঠান ভিত্তিক তালিকা</h2>
+      <p>সার্চ: "${document.getElementById('instsrch').value}" | মোট ফলাফল: ${fl.length} জন</p>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>আইডি</th>
+            <th>নাম</th>
+            <th>মোবাইল</th>
+            <th>শিক্ষা প্রতিষ্ঠান</th>
+            <th>সাংগঠনিক শাখা</th>
+            <th>পদবী</th>
+            <th>স্ট্যাটাস</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </body>
+    </html>
+  `);
+  w.document.close();
+  w.print();
+  }
 </script>
 </body>
 </html>
